@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — TheAbbasAli</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="container--wide">
+      <div class="header-inner">
+        <a href="index.html" class="site-logo">The<span>Abbas</span>Ali</a>
+        <nav>
+          <a href="index.html">View Blog</a>
+          <button id="logout-btn" class="btn btn-ghost" style="padding:6px 16px;font-size:0.65rem">Logout</button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Admin Layout -->
+  <div class="admin-layout">
+
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <p class="admin-sidebar-title">Dashboard</p>
+      <nav class="admin-nav">
+        <a href="#" data-page="posts" class="active">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          All Articles
+        </a>
+        <a href="#" data-page="new">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Article
+        </a>
+        <a href="#" data-page="comments">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Comments
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+
+      <!-- ── Page: All Posts ── -->
+      <div id="page-posts" class="admin-page">
+        <h1 class="admin-page-title">All Articles</h1>
+        <p class="admin-page-sub">Manage your published articles and drafts.</p>
+        <div style="margin-bottom:24px">
+          <button class="btn btn-primary" onclick="
+            document.querySelector('[data-page=new]').click()
+          ">+ New Article</button>
+        </div>
+        <div id="admin-posts-table"></div>
+      </div>
+
+      <!-- ── Page: New / Edit Post ── -->
+      <div id="page-new" class="admin-page" style="display:none">
+        <h1 class="admin-page-title" id="page-new-title">New Article</h1>
+        <p class="admin-page-sub">Write and publish your article below.</p>
+
+        <div class="editor-form">
+
+          <!-- Title -->
+          <div class="form-group">
+            <label class="form-label" for="post-title-input">Article Title</label>
+            <input type="text" id="post-title-input" class="form-input"
+                   placeholder="Enter a compelling title…" style="font-size:1.1rem;padding:16px" />
+          </div>
+
+          <!-- Excerpt -->
+          <div class="form-group">
+            <label class="form-label" for="post-excerpt-input">Excerpt <span style="color:var(--border-hover)">(optional — auto-generated if empty)</span></label>
+            <input type="text" id="post-excerpt-input" class="form-input"
+                   placeholder="A short description of this article…" />
+          </div>
+
+          <!-- Toolbar + Editor -->
+          <div>
+            <div class="editor-toolbar">
+              <button class="toolbar-btn" data-cmd="bold" title="Bold"><strong>B</strong></button>
+              <button class="toolbar-btn" data-cmd="italic" title="Italic"><em>I</em></button>
+              <button class="toolbar-btn" data-cmd="underline" title="Underline"><u>U</u></button>
+              <button class="toolbar-btn" data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+              <div class="toolbar-sep"></div>
+              <button class="toolbar-btn" id="toolbar-h2" title="Heading 2">H2</button>
+              <button class="toolbar-btn" id="toolbar-h3" title="Heading 3">H3</button>
+              <button class="toolbar-btn" id="toolbar-p" title="Paragraph">¶</button>
+              <div class="toolbar-sep"></div>
+              <button class="toolbar-btn" data-cmd="insertUnorderedList" title="Bullet list">• List</button>
+              <button class="toolbar-btn" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
+              <div class="toolbar-sep"></div>
+              <button class="toolbar-btn" id="toolbar-quote" title="Blockquote">" Quote</button>
+              <button class="toolbar-btn" id="toolbar-link" title="Insert link">🔗 Link</button>
+              <button class="toolbar-btn" id="toolbar-hr" title="Horizontal rule">― HR</button>
+              <div class="toolbar-sep"></div>
+              <button class="toolbar-btn" data-cmd="removeFormat" title="Clear formatting">✕ Clear</button>
+            </div>
+            <div
+              id="editor"
+              contenteditable="true"
+              data-placeholder="Start writing your article here…"
+              class="article-content"
+            ></div>
+          </div>
+
+          <!-- Actions -->
+          <div class="editor-actions">
+            <button class="btn btn-primary" id="save-btn">Publish</button>
+            <button class="btn btn-ghost" id="save-draft-btn">Save as Draft</button>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-left:8px">
+              <input type="checkbox" id="publish-toggle" checked style="accent-color:white;width:16px;height:16px" />
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.08em;color:var(--white-dim)">PUBLISH IMMEDIATELY</span>
+            </label>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Page: Comments ── -->
+      <div id="page-comments" class="admin-page" style="display:none">
+        <h1 class="admin-page-title">Comments</h1>
+        <p class="admin-page-sub">Review and moderate reader comments.</p>
+        <div id="admin-comments-list"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container--wide">
+      <div class="footer-inner">
+        <span class="footer-logo">TheAbbasAli</span>
+        <span class="footer-copy">Admin Panel</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

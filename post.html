@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loading… — TheAbbasAli</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="container--wide">
+      <div class="header-inner">
+        <a href="index.html" class="site-logo">The<span>Abbas</span>Ali</a>
+        <nav>
+          <a href="index.html">Writing</a>
+          <a href="admin.html" id="admin-link" style="display:none">Admin</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Post Container -->
+  <div id="post-container" style="opacity:0">
+
+    <!-- Post Hero -->
+    <section class="post-hero">
+      <div class="container">
+        <a href="index.html" class="back-link">← All Articles</a>
+
+        <div class="post-hero__meta">
+          <span id="post-date">—</span>
+        </div>
+        <h1 class="post-hero__title" id="post-title">Loading…</h1>
+        <p class="post-hero__excerpt" id="post-excerpt" style="display:none"></p>
+      </div>
+    </section>
+
+    <!-- Article Body -->
+    <section class="post-body">
+      <div class="container">
+        <div class="article-content" id="post-content"></div>
+      </div>
+    </section>
+
+    <!-- Like Section -->
+    <section class="like-section">
+      <div class="container" style="display:flex;align-items:center;gap:20px">
+        <button class="like-btn" id="like-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+          Like this article
+        </button>
+        <span class="like-count" id="like-count">0 likes</span>
+      </div>
+    </section>
+
+    <!-- Comments -->
+    <section class="comments-section">
+      <div class="container">
+        <h2 class="comments-title">
+          Comments <span id="comment-count" style="font-size:1rem;font-family:'IBM Plex Mono',monospace;font-weight:300;color:var(--white-dim)"></span>
+        </h2>
+
+        <!-- Comment Form -->
+        <div class="comment-form">
+          <form id="comment-form" novalidate>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="comment-name">Your Name</label>
+                <input type="text" id="comment-name" class="form-input" placeholder="Abbas Ali" required maxlength="80" />
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:16px">
+              <label class="form-label" for="comment-body">Comment</label>
+              <textarea id="comment-body" class="form-textarea" placeholder="What are your thoughts?" required maxlength="2000"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" id="comment-submit">Post Comment</button>
+          </form>
+        </div>
+
+        <!-- Comments List -->
+        <div class="comments-list" id="comments-list">
+          <p class="no-comments">Loading comments…</p>
+        </div>
+
+      </div>
+    </section>
+
+  </div><!-- /post-container -->
+
+  <!-- Footer -->
+  <footer>
+    <div class="container--wide">
+      <div class="footer-inner">
+        <a href="index.html" class="footer-logo">TheAbbasAli</a>
+        <span class="footer-copy">© <span id="year"></span> Abbas Ali</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/post.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    if (isAdmin()) document.getElementById('admin-link').style.display = '';
+  </script>
+</body>
+</html>

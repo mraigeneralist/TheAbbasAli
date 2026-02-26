@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TheAbbasAli</title>
+  <meta name="description" content="Personal blog by Abbas Ali — thoughts, essays, and ideas." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="container--wide">
+      <div class="header-inner">
+        <a href="index.html" class="site-logo">The<span>Abbas</span>Ali</a>
+        <nav>
+          <a href="index.html" class="active">Writing</a>
+          <a href="admin.html" id="admin-link" style="display:none">Admin</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <p class="hero-eyebrow fade-up fade-up-1">Personal Blog</p>
+      <h1 class="hero-title fade-up fade-up-2">
+        The<em>Abbas</em><br>Ali
+      </h1>
+      <p class="hero-sub fade-up fade-up-3">
+        Thoughts, essays, and ideas worth putting into words.
+      </p>
+    </div>
+  </section>
+
+  <!-- Posts -->
+  <section class="posts-section">
+    <div class="container">
+      <div class="section-header fade-up fade-up-1">
+        <span class="section-title">All Articles</span>
+        <span class="post-count" id="post-count"></span>
+      </div>
+
+      <div class="posts-list" id="posts-list">
+        <p class="loading">Loading articles…</p>
+      </div>
+
+      <div id="empty-state" class="empty-state" style="display:none">
+        <p>No articles published yet. Check back soon.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container--wide">
+      <div class="footer-inner">
+        <span class="footer-logo">TheAbbasAli</span>
+        <span class="footer-copy">© <span id="year"></span> Abbas Ali. All rights reserved.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    if (isAdmin()) document.getElementById('admin-link').style.display = '';
+  </script>
+</body>
+</html>
