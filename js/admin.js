@@ -191,7 +191,7 @@ function handleEditorKeydown(e) {
   const menu = document.getElementById('slash-menu');
 
   if (slashMenuOpen) {
-    const items = menu.querySelectorAll('.slash-item');
+    const items = [...menu.querySelectorAll('.slash-item')].filter(i => i.style.display !== 'none');
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       selectedSlashIndex = (selectedSlashIndex + 1) % items.length;
@@ -232,14 +232,31 @@ function openSlashMenu(query, range) {
 
   if (visibleCount === 0) { closeSlashMenu(); return; }
 
-  // Position menu near cursor
-  const rect = range.getBoundingClientRect();
-  menu.style.top = (rect.bottom + window.scrollY + 6) + 'px';
-  menu.style.left = (rect.left + window.scrollX) + 'px';
+  // Show menu first so we can measure it
   menu.classList.add('visible');
   slashMenuOpen = true;
+
+  // Position menu near cursor
+  const rect = range.getBoundingClientRect();
+  const menuH = menu.offsetHeight;
+  const menuW = menu.offsetWidth;
+  const viewH = window.innerHeight;
+  const viewW = window.innerWidth;
+
+  // Prefer below cursor, but flip above if not enough space
+  let top = rect.bottom + 6;
+  if (top + menuH > viewH - 10) top = rect.top - menuH - 6;
+  if (top < 10) top = 10;
+
+  let left = rect.left;
+  if (left + menuW > viewW - 10) left = viewW - menuW - 10;
+  if (left < 10) left = 10;
+
+  menu.style.top = top + 'px';
+  menu.style.left = left + 'px';
+
   selectedSlashIndex = 0;
-  updateSlashSelection(menu.querySelectorAll('.slash-item:not([style*="none"])'));
+  updateSlashSelection(menu.querySelectorAll('.slash-item:not([style*="display: none"])'));
 }
 
 function closeSlashMenu() {
@@ -250,9 +267,8 @@ function closeSlashMenu() {
 }
 
 function updateSlashSelection(items) {
-  items.forEach((item, i) => {
-    item.classList.toggle('selected', i === selectedSlashIndex);
-  });
+  document.querySelectorAll('.slash-item').forEach(i => i.classList.remove('selected'));
+  if (items[selectedSlashIndex]) items[selectedSlashIndex].classList.add('selected');
 }
 
 function deleteSlashTrigger() {

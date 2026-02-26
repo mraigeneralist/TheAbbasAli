@@ -9,17 +9,21 @@
     /* ── Slash Command Menu ── */
     #slash-menu {
       position: fixed;
-      background: #161616;
-      border: 1px solid rgba(240,236,228,0.15);
+      background: #1a1a1a;
+      border: 1px solid rgba(240,236,228,0.2);
       border-radius: 6px;
       padding: 6px;
-      z-index: 9999;
+      z-index: 99999;
       width: 260px;
-      box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+      max-height: 380px;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.9);
       display: none;
+      top: 0;
+      left: 0;
     }
 
-    #slash-menu.visible { display: block; }
+    #slash-menu.visible { display: block !important; }
 
     .slash-menu-label {
       font-family: 'IBM Plex Mono', monospace;
