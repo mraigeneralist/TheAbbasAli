@@ -1,10 +1,8 @@
 // ── Admin Panel ──────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Check if logged in via Supabase Auth
   const loggedIn = await isAdmin();
   if (!loggedIn) { window.location.href = 'login.html'; return; }
-
   initAdmin();
 });
 
@@ -14,7 +12,6 @@ function initAdmin() {
   const page = getParam('page') || 'posts';
   showPage(page);
 
-  // Nav links
   document.querySelectorAll('.admin-nav a[data-page]').forEach(link => {
     link.addEventListener('click', e => {
       e.preventDefault();
@@ -24,7 +21,6 @@ function initAdmin() {
     });
   });
 
-  // Logout
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
     await adminLogout();
     window.location.href = 'index.html';
@@ -44,72 +40,31 @@ function showPage(page) {
   if (page === 'comments') loadAdminComments();
 }
 
-// ── Rich Text Editor ─────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// EDITOR
+// ════════════════════════════════════════════════════════════════════
+
 function initEditor(post = null) {
   editingPostId = post ? post.id : null;
+  const editor = document.getElementById('editor');
 
   if (post) {
     document.getElementById('post-title-input').value = post.title;
     document.getElementById('post-excerpt-input').value = post.excerpt || '';
-    document.getElementById('editor').innerHTML = post.content;
+    editor.innerHTML = post.content;
     document.getElementById('publish-toggle').checked = post.published;
     document.getElementById('page-new-title').textContent = 'Edit Article';
   } else {
     document.getElementById('post-title-input').value = '';
     document.getElementById('post-excerpt-input').value = '';
-    document.getElementById('editor').innerHTML = '';
+    editor.innerHTML = '';
     document.getElementById('publish-toggle').checked = true;
     document.getElementById('page-new-title').textContent = 'New Article';
   }
+
+  initSlashMenu();
+  initAutoEmbed();
 }
-
-// Toolbar commands
-document.querySelectorAll('.toolbar-btn[data-cmd]').forEach(btn => {
-  btn.addEventListener('mousedown', e => {
-    e.preventDefault();
-    const cmd = btn.dataset.cmd;
-    const val = btn.dataset.val || null;
-    document.execCommand(cmd, false, val);
-    document.getElementById('editor').focus();
-  });
-});
-
-document.getElementById('toolbar-h2')?.addEventListener('mousedown', e => {
-  e.preventDefault();
-  document.execCommand('formatBlock', false, 'h2');
-  document.getElementById('editor').focus();
-});
-
-document.getElementById('toolbar-h3')?.addEventListener('mousedown', e => {
-  e.preventDefault();
-  document.execCommand('formatBlock', false, 'h3');
-  document.getElementById('editor').focus();
-});
-
-document.getElementById('toolbar-p')?.addEventListener('mousedown', e => {
-  e.preventDefault();
-  document.execCommand('formatBlock', false, 'p');
-  document.getElementById('editor').focus();
-});
-
-document.getElementById('toolbar-link')?.addEventListener('mousedown', e => {
-  e.preventDefault();
-  const url = prompt('Enter URL:');
-  if (url) document.execCommand('createLink', false, url);
-  document.getElementById('editor').focus();
-});
-
-document.getElementById('toolbar-quote')?.addEventListener('mousedown', e => {
-  e.preventDefault();
-  document.execCommand('formatBlock', false, 'blockquote');
-  document.getElementById('editor').focus();
-});
-
-document.getElementById('toolbar-hr')?.addEventListener('mousedown', e => {
-  e.preventDefault();
-  document.execCommand('insertHorizontalRule', false, null);
-  document.getElementById('editor').focus();
-});
 
 // ── Save / Publish ────────────────────────────────────────────────────
 document.getElementById('save-btn')?.addEventListener('click', () => savePost());
@@ -161,7 +116,469 @@ async function savePost(forceDraft = false) {
   saveBtn.textContent = 'Publish';
 }
 
-// ── Posts List ────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// SLASH COMMAND MENU
+// ════════════════════════════════════════════════════════════════════
+
+let slashMenuOpen = false;
+let slashStartNode = null;
+let slashStartOffset = 0;
+let selectedSlashIndex = 0;
+
+const slashCommands = [
+  { action: 'text',    name: 'Text' },
+  { action: 'h2',      name: 'Heading 1' },
+  { action: 'h3',      name: 'Heading 2' },
+  { action: 'h4',      name: 'Heading 3' },
+  { action: 'quote',   name: 'Quote' },
+  { action: 'code',    name: 'Code Block' },
+  { action: 'divider', name: 'Divider' },
+  { action: 'ul',      name: 'Bullet List' },
+  { action: 'ol',      name: 'Numbered List' },
+  { action: 'image',   name: 'Image' },
+  { action: 'embed',   name: 'Embed' },
+];
+
+function initSlashMenu() {
+  const editor = document.getElementById('editor');
+  const menu = document.getElementById('slash-menu');
+
+  // Remove old listeners by cloning
+  const newEditor = editor.cloneNode(true);
+  editor.parentNode.replaceChild(newEditor, editor);
+  const ed = document.getElementById('editor');
+
+  ed.addEventListener('keydown', handleEditorKeydown);
+  ed.addEventListener('input', handleEditorInput);
+  ed.addEventListener('paste', handleEditorPaste);
+
+  // Slash menu item clicks
+  menu.querySelectorAll('.slash-item').forEach((item, i) => {
+    item.addEventListener('mousedown', e => {
+      e.preventDefault();
+      executeSlashCommand(item.dataset.action);
+    });
+  });
+
+  // Close menu on outside click
+  document.addEventListener('mousedown', e => {
+    if (!menu.contains(e.target)) closeSlashMenu();
+  });
+}
+
+function handleEditorInput(e) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  const text = range.startContainer.textContent || '';
+  const offset = range.startOffset;
+  const textBeforeCursor = text.slice(0, offset);
+
+  // Detect '/' at start of line or after whitespace
+  const slashMatch = textBeforeCursor.match(/(^|\s)\/([^/]*)$/);
+
+  if (slashMatch) {
+    slashStartNode = range.startContainer;
+    slashStartOffset = offset - slashMatch[0].length + (slashMatch[1] ? 1 : 0);
+    const query = slashMatch[2].toLowerCase();
+    openSlashMenu(query, range);
+  } else {
+    closeSlashMenu();
+  }
+}
+
+function handleEditorKeydown(e) {
+  const menu = document.getElementById('slash-menu');
+
+  if (slashMenuOpen) {
+    const items = menu.querySelectorAll('.slash-item');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedSlashIndex = (selectedSlashIndex + 1) % items.length;
+      updateSlashSelection(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedSlashIndex = (selectedSlashIndex - 1 + items.length) % items.length;
+      updateSlashSelection(items);
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      const selected = items[selectedSlashIndex];
+      if (selected) executeSlashCommand(selected.dataset.action);
+    } else if (e.key === 'Escape') {
+      closeSlashMenu();
+    }
+    return;
+  }
+
+  // Enter key on empty line — keep clean paragraphs
+  if (e.key === 'Enter' && !e.shiftKey) {
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+  }
+}
+
+function openSlashMenu(query, range) {
+  const menu = document.getElementById('slash-menu');
+  const items = menu.querySelectorAll('.slash-item');
+
+  // Filter items
+  let visibleCount = 0;
+  items.forEach(item => {
+    const name = item.querySelector('.slash-item-name').textContent.toLowerCase();
+    const show = !query || name.includes(query);
+    item.style.display = show ? 'flex' : 'none';
+    if (show) visibleCount++;
+  });
+
+  if (visibleCount === 0) { closeSlashMenu(); return; }
+
+  // Position menu near cursor
+  const rect = range.getBoundingClientRect();
+  menu.style.top = (rect.bottom + window.scrollY + 6) + 'px';
+  menu.style.left = (rect.left + window.scrollX) + 'px';
+  menu.classList.add('visible');
+  slashMenuOpen = true;
+  selectedSlashIndex = 0;
+  updateSlashSelection(menu.querySelectorAll('.slash-item:not([style*="none"])'));
+}
+
+function closeSlashMenu() {
+  const menu = document.getElementById('slash-menu');
+  menu.classList.remove('visible');
+  slashMenuOpen = false;
+  selectedSlashIndex = 0;
+}
+
+function updateSlashSelection(items) {
+  items.forEach((item, i) => {
+    item.classList.toggle('selected', i === selectedSlashIndex);
+  });
+}
+
+function deleteSlashTrigger() {
+  // Delete the '/' and any query text typed after it
+  if (!slashStartNode) return;
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const range = document.createRange();
+  range.setStart(slashStartNode, slashStartOffset);
+  range.setEnd(sel.getRangeAt(0).startContainer, sel.getRangeAt(0).startOffset);
+  range.deleteContents();
+}
+
+function executeSlashCommand(action) {
+  closeSlashMenu();
+  deleteSlashTrigger();
+  const editor = document.getElementById('editor');
+  editor.focus();
+
+  switch (action) {
+    case 'text':
+      document.execCommand('formatBlock', false, 'p');
+      break;
+    case 'h2':
+      document.execCommand('formatBlock', false, 'h2');
+      break;
+    case 'h3':
+      document.execCommand('formatBlock', false, 'h3');
+      break;
+    case 'h4':
+      document.execCommand('formatBlock', false, 'h4');
+      break;
+    case 'quote':
+      document.execCommand('formatBlock', false, 'blockquote');
+      break;
+    case 'divider':
+      document.execCommand('insertHorizontalRule', false, null);
+      // Move cursor after HR
+      const hrSel = window.getSelection();
+      if (hrSel.rangeCount) {
+        const p = document.createElement('p');
+        p.innerHTML = '<br>';
+        hrSel.getRangeAt(0).insertNode(p);
+        const r = document.createRange();
+        r.setStart(p, 0);
+        hrSel.removeAllRanges();
+        hrSel.addRange(r);
+      }
+      break;
+    case 'ul':
+      document.execCommand('insertUnorderedList', false, null);
+      break;
+    case 'ol':
+      document.execCommand('insertOrderedList', false, null);
+      break;
+    case 'code':
+      insertCodeBlock();
+      break;
+    case 'image':
+      triggerImageUpload();
+      break;
+    case 'embed':
+      triggerEmbedPrompt();
+      break;
+  }
+}
+
+// ── Code Block ────────────────────────────────────────────────────────
+function insertCodeBlock() {
+  const editor = document.getElementById('editor');
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+
+  const block = document.createElement('pre');
+  block.className = 'code-block';
+  block.contentEditable = 'true';
+  block.setAttribute('data-block', 'code');
+
+  const after = document.createElement('p');
+  after.innerHTML = '<br>';
+
+  sel.getRangeAt(0).insertNode(after);
+  after.parentNode.insertBefore(block, after);
+
+  // Focus the code block
+  const r = document.createRange();
+  r.setStart(block, 0);
+  sel.removeAllRanges();
+  sel.addRange(r);
+  block.focus();
+}
+
+// ── Image Upload ──────────────────────────────────────────────────────
+function triggerImageUpload() {
+  const input = document.getElementById('image-upload-input');
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      insertImageBlock(ev.target.result, file.name);
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  };
+  input.click();
+}
+
+function insertImageBlock(src, alt) {
+  const editor = document.getElementById('editor');
+  const sel = window.getSelection();
+  if (!sel.rangeCount) { editor.focus(); }
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'image-block';
+  wrapper.contentEditable = 'false';
+
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = alt || '';
+
+  const caption = document.createElement('div');
+  caption.className = 'image-caption';
+  caption.contentEditable = 'true';
+
+  wrapper.appendChild(img);
+  wrapper.appendChild(caption);
+
+  const after = document.createElement('p');
+  after.innerHTML = '<br>';
+
+  const range = sel.rangeCount ? sel.getRangeAt(0) : null;
+  if (range) {
+    range.insertNode(after);
+    after.parentNode.insertBefore(wrapper, after);
+  } else {
+    editor.appendChild(wrapper);
+    editor.appendChild(after);
+  }
+
+  // Move cursor to after block
+  const r = document.createRange();
+  r.setStart(after, 0);
+  sel.removeAllRanges();
+  sel.addRange(r);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// AUTO-EMBED (YouTube + X/Twitter)
+// ════════════════════════════════════════════════════════════════════
+
+function initAutoEmbed() {
+  const editor = document.getElementById('editor');
+  editor.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const sel = window.getSelection();
+      if (!sel.rangeCount) return;
+      const range = sel.getRangeAt(0);
+      const node = range.startContainer;
+      const text = (node.textContent || '').trim();
+
+      const ytId = getYouTubeId(text);
+      const tweetId = getTwitterId(text);
+
+      if (ytId) {
+        e.preventDefault();
+        replaceNodeWithEmbed(node, buildYouTubeEmbed(ytId));
+      } else if (tweetId) {
+        e.preventDefault();
+        replaceNodeWithEmbed(node, buildTwitterEmbed(tweetId, text));
+      }
+    }
+  });
+}
+
+function handleEditorPaste(e) {
+  // Check if pasted content is a plain URL
+  const text = (e.clipboardData || window.clipboardData).getData('text/plain').trim();
+  const ytId = getYouTubeId(text);
+  const tweetId = getTwitterId(text);
+
+  if (ytId || tweetId) {
+    e.preventDefault();
+    // Insert as plain text first, then auto-convert on Enter
+    document.execCommand('insertText', false, text);
+  }
+}
+
+function getYouTubeId(url) {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function getTwitterId(url) {
+  const m = url.match(/(?:twitter\.com|x\.com)\/\w+\/status\/(\d+)/);
+  return m ? m[1] : null;
+}
+
+function buildYouTubeEmbed(id) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'embed-wrapper';
+  wrapper.contentEditable = 'false';
+
+  const label = document.createElement('span');
+  label.className = 'embed-label';
+  label.textContent = 'YouTube';
+
+  const iframe = document.createElement('iframe');
+  iframe.src = `https://www.youtube.com/embed/${id}`;
+  iframe.height = '400';
+  iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+  iframe.allowFullscreen = true;
+
+  wrapper.appendChild(label);
+  wrapper.appendChild(iframe);
+  return wrapper;
+}
+
+function buildTwitterEmbed(id, url) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'embed-wrapper';
+  wrapper.contentEditable = 'false';
+  wrapper.style.padding = '16px';
+
+  const label = document.createElement('span');
+  label.className = 'embed-label';
+  label.textContent = 'X / Twitter';
+
+  // Use Twitter oEmbed widget
+  const blockquote = document.createElement('blockquote');
+  blockquote.className = 'twitter-tweet';
+  blockquote.setAttribute('data-theme', 'dark');
+
+  const a = document.createElement('a');
+  a.href = url;
+  blockquote.appendChild(a);
+
+  wrapper.appendChild(label);
+  wrapper.appendChild(blockquote);
+
+  // Load Twitter widget script if not already loaded
+  if (!document.getElementById('twitter-widget-script')) {
+    const script = document.createElement('script');
+    script.id = 'twitter-widget-script';
+    script.src = 'https://platform.twitter.com/widgets.js';
+    script.async = true;
+    document.body.appendChild(script);
+  } else if (window.twttr) {
+    setTimeout(() => window.twttr.widgets.load(), 300);
+  }
+
+  return wrapper;
+}
+
+function replaceNodeWithEmbed(node, embedEl) {
+  const editor = document.getElementById('editor');
+
+  // Find the block-level parent
+  let block = node;
+  while (block.parentNode !== editor && block.parentNode) {
+    block = block.parentNode;
+  }
+
+  const after = document.createElement('p');
+  after.innerHTML = '<br>';
+
+  block.parentNode.insertBefore(embedEl, block);
+  block.parentNode.insertBefore(after, block);
+  block.parentNode.removeChild(block);
+
+  // Move cursor to paragraph after embed
+  const sel = window.getSelection();
+  const r = document.createRange();
+  r.setStart(after, 0);
+  sel.removeAllRanges();
+  sel.addRange(r);
+}
+
+function triggerEmbedPrompt() {
+  const url = prompt('Paste a YouTube or X/Twitter URL:');
+  if (!url) return;
+
+  const ytId = getYouTubeId(url.trim());
+  const tweetId = getTwitterId(url.trim());
+
+  if (ytId) {
+    insertEmbedAtCursor(buildYouTubeEmbed(ytId));
+  } else if (tweetId) {
+    insertEmbedAtCursor(buildTwitterEmbed(tweetId, url.trim()));
+  } else {
+    showToast('Not a valid YouTube or X/Twitter URL.', 'error');
+  }
+}
+
+function insertEmbedAtCursor(embedEl) {
+  const editor = document.getElementById('editor');
+  const sel = window.getSelection();
+  const after = document.createElement('p');
+  after.innerHTML = '<br>';
+
+  if (sel.rangeCount) {
+    const range = sel.getRangeAt(0);
+    range.insertNode(after);
+    after.parentNode.insertBefore(embedEl, after);
+  } else {
+    editor.appendChild(embedEl);
+    editor.appendChild(after);
+  }
+
+  const r = document.createRange();
+  r.setStart(after, 0);
+  sel.removeAllRanges();
+  sel.addRange(r);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// POSTS LIST
+// ════════════════════════════════════════════════════════════════════
+
 async function loadAdminPosts() {
   const container = document.getElementById('admin-posts-table');
   if (!container) return;
@@ -241,7 +658,10 @@ async function deletePost(id) {
   }
 }
 
-// ── Comments Management ───────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// COMMENTS
+// ════════════════════════════════════════════════════════════════════
+
 async function loadAdminComments() {
   const container = document.getElementById('admin-comments-list');
   if (!container) return;

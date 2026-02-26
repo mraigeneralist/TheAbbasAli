@@ -5,8 +5,255 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin — TheAbbasAli</title>
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* ── Slash Command Menu ── */
+    #slash-menu {
+      position: fixed;
+      background: #161616;
+      border: 1px solid rgba(240,236,228,0.15);
+      border-radius: 6px;
+      padding: 6px;
+      z-index: 9999;
+      width: 260px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+      display: none;
+    }
+
+    #slash-menu.visible { display: block; }
+
+    .slash-menu-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(240,236,228,0.3);
+      padding: 6px 10px 4px;
+    }
+
+    .slash-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .slash-item:hover,
+    .slash-item.selected {
+      background: rgba(240,236,228,0.08);
+    }
+
+    .slash-item-icon {
+      width: 32px;
+      height: 32px;
+      background: rgba(240,236,228,0.07);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      font-family: 'IBM Plex Mono', monospace;
+      color: rgba(240,236,228,0.7);
+    }
+
+    .slash-item-text { display: flex; flex-direction: column; gap: 1px; }
+
+    .slash-item-name {
+      font-size: 0.85rem;
+      color: #f0ece4;
+      font-family: 'IBM Plex Sans', sans-serif;
+    }
+
+    .slash-item-desc {
+      font-size: 0.68rem;
+      color: rgba(240,236,228,0.4);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    /* ── Embeds in editor ── */
+    .embed-wrapper {
+      position: relative;
+      margin: 16px 0;
+      border: 1px solid rgba(240,236,228,0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      background: #111;
+    }
+
+    .embed-wrapper iframe {
+      display: block;
+      width: 100%;
+      border: none;
+    }
+
+    .embed-label {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.7);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(240,236,228,0.5);
+      padding: 3px 8px;
+      border-radius: 2px;
+      pointer-events: none;
+    }
+
+    /* ── Image block in editor ── */
+    .image-block {
+      margin: 16px 0;
+      border: 1px solid rgba(240,236,228,0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      background: #111;
+      text-align: center;
+    }
+
+    .image-block img {
+      max-width: 100%;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .image-caption {
+      font-size: 0.8rem;
+      color: rgba(240,236,228,0.4);
+      font-family: 'IBM Plex Mono', monospace;
+      padding: 8px 12px;
+      outline: none;
+      min-height: 28px;
+    }
+
+    .image-caption:empty::before {
+      content: 'Add caption (optional)';
+      color: rgba(240,236,228,0.2);
+    }
+
+    /* ── Code block in editor ── */
+    .code-block {
+      background: #0d0d0d;
+      border: 1px solid rgba(240,236,228,0.1);
+      border-radius: 4px;
+      padding: 20px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.7;
+      color: #a8d8a8;
+      white-space: pre-wrap;
+      outline: none;
+      margin: 16px 0;
+    }
+
+    .code-block:empty::before {
+      content: 'Write your code here…';
+      color: rgba(240,236,228,0.2);
+    }
+
+    /* Slash hint in empty editor */
+    #editor:empty::after {
+      content: "Type '/' for commands";
+      color: rgba(240,236,228,0.15);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      display: block;
+      margin-top: 8px;
+    }
+
+    /* Image upload input hidden */
+    #image-upload-input { display: none; }
+  </style>
 </head>
 <body>
+
+  <!-- Hidden image upload input -->
+  <input type="file" id="image-upload-input" accept="image/*" />
+
+  <!-- Slash Command Menu -->
+  <div id="slash-menu">
+    <div class="slash-menu-label">Basic blocks</div>
+    <div class="slash-item" data-action="text">
+      <div class="slash-item-icon">¶</div>
+      <div class="slash-item-text">
+        <span class="slash-item-name">Text</span>
+        <span class="slash-item-desc">Plain paragraph</span>
+      </div>
+    </div>
+    <div class="slash-item" data-action="h2">
+      <div class="slash-item-icon">H1</div>
+      <div class="slash-item-text">
+        <span class="slash-item-name">Heading 1</span>
+        <span class="slash-item-desc">Large section header</span>
+      </div>
+    </div>
+    <div class="slash-item" data-action="h3">
+      <div class="slash-item-icon">H2</div>
+      <div class="slash-item-text">
+        <span class="slash-item-name">Heading 2</span>
+        <span class="slash-item-desc">Medium section header</span>
+      </div>
+    </div>
+    <div class="slash-item" data-action="h4">
+      <div class="slash-item-icon">H3</div>
+      <div class="slash-item-text">
+        <span class="slash-item-name">Heading 3</span>
+        <span class="slash-item-desc">Small section header</span>
+      </div>
+    </div>
+    <div class="slash-item" data-action="quote">
+      <div class="slash-item-icon">"</div>
+      <div class="slash-item-text">
+        <span class="slash-item-name">Quote</span>
+        <span class="slash-item-desc">Highlighted blockquote</span>
+      </div>
+    </div>
+    <div class="slash-item" data-action="code">
+      <div class="slash-item-icon">&lt;/&gt;</div>
+      <div class="slash-item-text">
+        <span class="slash-item-name">Code Block</span>
+        <span class="slash-item-desc">Monospace code block</span>
+      </div>
+    </div>
+    <div class="slash-item" data-action="divider">
+      <div class="slash-item-icon">—</div>
+      <div class="slash-item-text">
+        <span class="slash-item-name">Divider</span>
+        <span class="slash-item-desc">Horizontal rule</span>
+      </div>
+    </div>
+    <div class="slash-item" data-action="ul">
+      <div class="slash-item-icon">•</div>
+      <div class="slash-item-text">
+        <span class="slash-item-name">Bullet List</span>
+        <span class="slash-item-desc">Unordered list</span>
+      </div>
+    </div>
+    <div class="slash-item" data-action="ol">
+      <div class="slash-item-icon">1.</div>
+      <div class="slash-item-text">
+        <span class="slash-item-name">Numbered List</span>
+        <span class="slash-item-desc">Ordered list</span>
+      </div>
+    </div>
+    <div class="slash-item" data-action="image">
+      <div class="slash-item-icon">🖼</div>
+      <div class="slash-item-text">
+        <span class="slash-item-name">Image</span>
+        <span class="slash-item-desc">Upload from your device</span>
+      </div>
+    </div>
+    <div class="slash-item" data-action="embed">
+      <div class="slash-item-icon">▶</div>
+      <div class="slash-item-text">
+        <span class="slash-item-name">Embed</span>
+        <span class="slash-item-desc">YouTube or X/Twitter link</span>
+      </div>
+    </div>
+  </div>
 
   <!-- Header -->
   <header>
@@ -51,9 +298,7 @@
         <h1 class="admin-page-title">All Articles</h1>
         <p class="admin-page-sub">Manage your published articles and drafts.</p>
         <div style="margin-bottom:24px">
-          <button class="btn btn-primary" onclick="
-            document.querySelector('[data-page=new]').click()
-          ">+ New Article</button>
+          <button class="btn btn-primary" onclick="document.querySelector('[data-page=new]').click()">+ New Article</button>
         </div>
         <div id="admin-posts-table"></div>
       </div>
@@ -61,7 +306,7 @@
       <!-- ── Page: New / Edit Post ── -->
       <div id="page-new" class="admin-page" style="display:none">
         <h1 class="admin-page-title" id="page-new-title">New Article</h1>
-        <p class="admin-page-sub">Write and publish your article below.</p>
+        <p class="admin-page-sub">Write and publish your article below. Type <kbd style="background:var(--bg3);padding:2px 6px;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;border:1px solid var(--border)">/</kbd> for commands.</p>
 
         <div class="editor-form">
 
@@ -74,36 +319,17 @@
 
           <!-- Excerpt -->
           <div class="form-group">
-            <label class="form-label" for="post-excerpt-input">Excerpt <span style="color:var(--border-hover)">(optional — auto-generated if empty)</span></label>
+            <label class="form-label" for="post-excerpt-input">Excerpt <span style="color:var(--border-hover)">(optional)</span></label>
             <input type="text" id="post-excerpt-input" class="form-input"
                    placeholder="A short description of this article…" />
           </div>
 
-          <!-- Toolbar + Editor -->
+          <!-- Editor (no toolbar — use / commands) -->
           <div>
-            <div class="editor-toolbar">
-              <button class="toolbar-btn" data-cmd="bold" title="Bold"><strong>B</strong></button>
-              <button class="toolbar-btn" data-cmd="italic" title="Italic"><em>I</em></button>
-              <button class="toolbar-btn" data-cmd="underline" title="Underline"><u>U</u></button>
-              <button class="toolbar-btn" data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
-              <div class="toolbar-sep"></div>
-              <button class="toolbar-btn" id="toolbar-h2" title="Heading 2">H2</button>
-              <button class="toolbar-btn" id="toolbar-h3" title="Heading 3">H3</button>
-              <button class="toolbar-btn" id="toolbar-p" title="Paragraph">¶</button>
-              <div class="toolbar-sep"></div>
-              <button class="toolbar-btn" data-cmd="insertUnorderedList" title="Bullet list">• List</button>
-              <button class="toolbar-btn" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
-              <div class="toolbar-sep"></div>
-              <button class="toolbar-btn" id="toolbar-quote" title="Blockquote">" Quote</button>
-              <button class="toolbar-btn" id="toolbar-link" title="Insert link">🔗 Link</button>
-              <button class="toolbar-btn" id="toolbar-hr" title="Horizontal rule">― HR</button>
-              <div class="toolbar-sep"></div>
-              <button class="toolbar-btn" data-cmd="removeFormat" title="Clear formatting">✕ Clear</button>
-            </div>
             <div
               id="editor"
               contenteditable="true"
-              data-placeholder="Start writing your article here…"
+              data-placeholder="Start writing… or type '/' for commands"
               class="article-content"
             ></div>
           </div>
