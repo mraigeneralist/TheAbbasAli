@@ -780,18 +780,14 @@ footer {
 
 /* ── Claude Mark ── */
 .claude-mark {
-  display: inline-block;
+  display: inline;
   vertical-align: middle;
-  width: 0.9em;
-  height: 0.9em;
-  margin-left: 0.15em;
+  width: 0.85em;
+  height: 0.85em;
+  margin-left: 0.12em;
   animation: claudeFloat 3s ease-in-out infinite;
   transform-origin: center;
-}
-.claude-mark svg {
-  width: 100%;
-  height: 100%;
-  display: block;
+  overflow: visible;
 }
 
 @keyframes claudeFloat {
