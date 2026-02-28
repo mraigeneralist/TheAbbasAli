@@ -390,10 +390,20 @@ function insertImageBlock(src, alt) {
   img.src = src;
   img.alt = alt || '';
 
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'image-block-delete';
+  deleteBtn.innerHTML = '×';
+  deleteBtn.title = 'Delete image';
+  deleteBtn.addEventListener('click', () => {
+    wrapper.remove();
+    editor.focus();
+  });
+
   const caption = document.createElement('div');
   caption.className = 'image-caption';
   caption.contentEditable = 'true';
 
+  wrapper.appendChild(deleteBtn);
   wrapper.appendChild(img);
   wrapper.appendChild(caption);
 

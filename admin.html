@@ -116,6 +116,32 @@
       overflow: hidden;
       background: #111;
       text-align: center;
+      position: relative;
+    }
+
+    .image-block-delete {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(240,236,228,0.2);
+      color: #f0ece4;
+      font-size: 1.1rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 10;
+    }
+
+    .image-block:hover .image-block-delete {
+      opacity: 1;
     }
 
     .image-block img {
