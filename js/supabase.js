@@ -11,8 +11,8 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ── Auth Helpers ────────────────────────────────────────────────────
 async function isAdmin() {
-  const { data: { session } } = await db.auth.getSession();
-  return session !== null;
+  const { data: { user } } = await db.auth.getUser();
+  return user !== null;
 }
 
 async function adminLogin(email, password) {
