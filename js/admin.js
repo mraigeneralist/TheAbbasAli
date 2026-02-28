@@ -225,7 +225,8 @@ function openSlashMenu(query, range) {
   let visibleCount = 0;
   items.forEach(item => {
     const name = item.querySelector('.slash-item-name').textContent.toLowerCase();
-    const show = !query || name.includes(query);
+    const alias = (item.dataset.alias || '').toLowerCase();
+    const show = !query || name.includes(query) || alias === query;
     item.style.display = show ? 'flex' : 'none';
     if (show) visibleCount++;
   });
@@ -292,14 +293,14 @@ function executeSlashCommand(action) {
     case 'text':
       document.execCommand('formatBlock', false, 'p');
       break;
+    case 'h1':
+      document.execCommand('formatBlock', false, 'h1');
+      break;
     case 'h2':
       document.execCommand('formatBlock', false, 'h2');
       break;
     case 'h3':
       document.execCommand('formatBlock', false, 'h3');
-      break;
-    case 'h4':
-      document.execCommand('formatBlock', false, 'h4');
       break;
     case 'quote':
       document.execCommand('formatBlock', false, 'blockquote');
