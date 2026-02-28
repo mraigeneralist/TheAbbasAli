@@ -291,33 +291,22 @@ function executeSlashCommand(action) {
 
   switch (action) {
     case 'text':
-      document.execCommand('formatBlock', false, 'p');
+      replaceCurrentBlock('p');
       break;
     case 'h1':
-      document.execCommand('formatBlock', false, 'h1');
+      replaceCurrentBlock('h1');
       break;
     case 'h2':
-      document.execCommand('formatBlock', false, 'h2');
+      replaceCurrentBlock('h2');
       break;
     case 'h3':
-      document.execCommand('formatBlock', false, 'h3');
+      replaceCurrentBlock('h3');
       break;
     case 'quote':
-      document.execCommand('formatBlock', false, 'blockquote');
+      replaceCurrentBlock('blockquote');
       break;
     case 'divider':
-      document.execCommand('insertHorizontalRule', false, null);
-      // Move cursor after HR
-      const hrSel = window.getSelection();
-      if (hrSel.rangeCount) {
-        const p = document.createElement('p');
-        p.innerHTML = '<br>';
-        hrSel.getRangeAt(0).insertNode(p);
-        const r = document.createRange();
-        r.setStart(p, 0);
-        hrSel.removeAllRanges();
-        hrSel.addRange(r);
-      }
+      insertDivider();
       break;
     case 'ul':
       document.execCommand('insertUnorderedList', false, null);
@@ -335,6 +324,51 @@ function executeSlashCommand(action) {
       triggerEmbedPrompt();
       break;
   }
+}
+
+function replaceCurrentBlock(tag) {
+  const editor = document.getElementById('editor');
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+
+  // Find the block-level ancestor inside the editor
+  let block = sel.getRangeAt(0).startContainer;
+  if (block.nodeType === Node.TEXT_NODE) block = block.parentNode;
+  while (block.parentNode !== editor && block.parentNode) block = block.parentNode;
+
+  const newBlock = document.createElement(tag);
+  newBlock.innerHTML = block.innerHTML || '<br>';
+  block.parentNode.replaceChild(newBlock, block);
+
+  // Place cursor inside the new block
+  const r = document.createRange();
+  r.selectNodeContents(newBlock);
+  r.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(r);
+}
+
+function insertDivider() {
+  const editor = document.getElementById('editor');
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+
+  let block = sel.getRangeAt(0).startContainer;
+  if (block.nodeType === Node.TEXT_NODE) block = block.parentNode;
+  while (block.parentNode !== editor && block.parentNode) block = block.parentNode;
+
+  const hr = document.createElement('hr');
+  const after = document.createElement('p');
+  after.innerHTML = '<br>';
+
+  block.parentNode.insertBefore(hr, block);
+  block.parentNode.insertBefore(after, block);
+  block.parentNode.removeChild(block);
+
+  const r = document.createRange();
+  r.setStart(after, 0);
+  sel.removeAllRanges();
+  sel.addRange(r);
 }
 
 // ── Code Block ────────────────────────────────────────────────────────
