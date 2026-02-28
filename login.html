@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login — TheAbbasAli</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div class="login-page">
+    <div class="login-box">
+      <div class="login-logo fade-up fade-up-1">TheAbbasAli</div>
+      <p class="login-tagline fade-up fade-up-2">Admin Access Only</p>
+
+      <form class="login-form fade-up fade-up-3" id="login-form" novalidate>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            class="form-input"
+            placeholder="your@email.com"
+            autofocus
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            class="form-input"
+            placeholder="Your password"
+            required
+          />
+        </div>
+
+        <p class="error-msg" id="error-msg" style="display:none">
+          Incorrect email or password. Try again.
+        </p>
+
+        <button type="submit" class="btn btn-primary" id="login-btn">Enter →</button>
+      </form>
+
+      <p style="margin-top:32px">
+        <a href="index.html" class="back-link">← Back to blog</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script>
+    // If already logged in, go straight to admin
+    (async () => {
+      if (await isAdmin()) window.location.href = 'admin.html';
+    })();
+
+    document.getElementById('login-form').addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const errEl = document.getElementById('error-msg');
+      const btn = document.getElementById('login-btn');
+
+      btn.disabled = true;
+      btn.textContent = 'Logging in…';
+      errEl.style.display = 'none';
+
+      const success = await adminLogin(email, password);
+
+      if (success) {
+        btn.textContent = 'Welcome back →';
+        setTimeout(() => window.location.href = 'admin.html', 600);
+      } else {
+        errEl.style.display = 'block';
+        document.getElementById('password').value = '';
+        btn.disabled = false;
+        btn.textContent = 'Enter →';
+      }
+    });
+  </script>
+</body>
+</html>
