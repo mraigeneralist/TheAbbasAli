@@ -23,7 +23,7 @@ async function loadPost(slug) {
   }
 
   currentPost = post;
-  document.title = `${post.title} — TheAbbasAli`;
+  document.title = `${post.title} — TheAIGeneralist`;
 
   // Set meta
   document.getElementById('post-title').textContent = post.title;
