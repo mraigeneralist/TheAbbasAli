@@ -210,10 +210,40 @@ function handleEditorKeydown(e) {
     return;
   }
 
-  // Enter key on empty line — keep clean paragraphs
-  if (e.key === 'Enter' && !e.shiftKey) {
+  // Code block: Enter inserts newline, Shift+Enter exits
+  if (e.key === 'Enter') {
     const sel = window.getSelection();
     if (!sel.rangeCount) return;
+    const node = sel.getRangeAt(0).startContainer;
+    const codeBlock = node.nodeType === Node.TEXT_NODE
+      ? node.parentElement.closest('pre.code-block')
+      : node.closest('pre.code-block');
+
+    if (codeBlock) {
+      if (e.shiftKey) {
+        // Shift+Enter: exit code block, create paragraph after it
+        e.preventDefault();
+        const after = document.createElement('p');
+        after.innerHTML = '<br>';
+        codeBlock.parentNode.insertBefore(after, codeBlock.nextSibling);
+        const r = document.createRange();
+        r.setStart(after, 0);
+        sel.removeAllRanges();
+        sel.addRange(r);
+      } else {
+        // Enter: insert newline inside code block
+        e.preventDefault();
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        const newline = document.createTextNode('\n');
+        range.insertNode(newline);
+        range.setStartAfter(newline);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      return;
+    }
   }
 }
 
@@ -530,7 +560,8 @@ function buildYouTubeEmbed(id) {
 
   const iframe = document.createElement('iframe');
   iframe.src = `https://www.youtube.com/embed/${id}`;
-  iframe.height = '400';
+  iframe.style.width = '100%';
+  iframe.style.aspectRatio = '16 / 9';
   iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
   iframe.allowFullscreen = true;
 
